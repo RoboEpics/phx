@@ -1,0 +1,15 @@
+tar:
+  linux: 
+    cmd: "/bin/bash"
+    args: ["./.phoenix/TAR"]
+  windows:
+    cmd: "python"
+    args: ["./.phoenix/TAR.py"]
+pack:
+  linux: 
+    cmd: "/bin/bash"
+    args: ["./.phoenix/Pack"]
+unpack:
+  linux: 
+    cmd: "/bin/bash"
+    args: ["./.phoenix/Unpack"]

@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# Pack output as result of project
+echo > $EGG_PACK

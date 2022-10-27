@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Tar and send directory as a repository
+base=$(basename "$PWD")
+cd ..
+tar -czf $TAR_FILE "$base"
