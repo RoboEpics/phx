@@ -37,14 +37,14 @@ var statusCmd = &cobra.Command{
 		for _, job := range jobs {
 			var (
 				result, _      = castFst[string](job.V("result"))
-				exitCode, exOk = castFst[int](job.V("exit_code"))
+				exitCode, exOk = castFst[float64](job.V("exit_code"))
 			)
 			if !exOk {
 				fmt.Printf("%s: %s", job.ID, "RUNNING\n")
 			} else if result == "" {
-				fmt.Printf("%s: EXITED (exit code %d)\n", job.ID, exitCode)
+				fmt.Printf("%s: EXITED (exit code %d)\n", job.ID, int(exitCode))
 			} else {
-				fmt.Printf("%s: DONE (exit code %d)\n", job.ID, exitCode)
+				fmt.Printf("%s: DONE (exit code %d)\n", job.ID, int(exitCode))
 			}
 		}
 		if !viper.GetBool("quiet") {

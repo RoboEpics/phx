@@ -39,7 +39,7 @@ var jupyteStatusCmd = &cobra.Command{
 		for _, job := range jobs {
 			var (
 				result, _     = castFst[string](job.V("result"))
-				_, exitcodeOk = castFst[int](job.V("exit_code"))
+				_, exitcodeOk = castFst[float64](job.V("exit_code"))
 			)
 			if result == "" || !exitcodeOk {
 				fmt.Printf("%s: %s", job.ID, "RUNNING\n")
