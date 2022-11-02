@@ -3,7 +3,7 @@ package main
 import (
 	"embed"
 
-	"gitlab.roboepics.com/roboepics/xerac/phoenix/phx/cmd"
+	"github.com/RoboEpics/phx/cmd"
 )
 
 var (

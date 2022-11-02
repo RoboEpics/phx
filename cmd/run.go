@@ -6,7 +6,7 @@ import (
 	"os"
 	"path"
 
-	"gitlab.roboepics.com/roboepics/xerac/phoenix/phx/client"
+	"github.com/RoboEpics/phx/client"
 	"gitlab.roboepics.com/roboepics/xerac/phoenix/pkg/pei"
 
 	"github.com/spf13/cobra"

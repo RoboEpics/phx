@@ -6,9 +6,9 @@ import (
 	"os"
 	"path"
 
+	"github.com/RoboEpics/phx/client"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gitlab.roboepics.com/roboepics/xerac/phoenix/phx/client"
 	"gitlab.roboepics.com/roboepics/xerac/phoenix/pkg/pei"
 )
 

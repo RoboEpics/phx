@@ -5,7 +5,7 @@ import (
 	"log"
 	"sort"
 
-	"gitlab.roboepics.com/roboepics/xerac/phoenix/phx/client"
+	"github.com/RoboEpics/phx/client"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

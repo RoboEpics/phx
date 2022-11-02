@@ -5,12 +5,13 @@ import (
 	"strconv"
 	"strings"
 
-	"gitlab.roboepics.com/roboepics/xerac/phoenix/phx/client"
 	"gitlab.roboepics.com/roboepics/xerac/phoenix/pkg/proxy"
 	"gitlab.roboepics.com/roboepics/xerac/phoenix/pkg/util"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/RoboEpics/phx/client"
 )
 
 // tunnelCmd represents the tunnel command

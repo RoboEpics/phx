@@ -6,12 +6,13 @@ import (
 	"os"
 	"path"
 
-	"gitlab.roboepics.com/roboepics/xerac/phoenix/phx/client"
 	"gitlab.roboepics.com/roboepics/xerac/phoenix/pkg/pei"
 	"gitlab.roboepics.com/roboepics/xerac/phoenix/pkg/util"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/RoboEpics/phx/client"
 )
 
 // jupyterCreateCmd represents the jupyterCreate command

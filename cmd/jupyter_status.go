@@ -7,7 +7,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gitlab.roboepics.com/roboepics/xerac/phoenix/phx/client"
+
+	"github.com/RoboEpics/phx/client"
 )
 
 // jupyteStatusCmd represents the jupyteStatus command

@@ -6,9 +6,10 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gitlab.roboepics.com/roboepics/xerac/phoenix/phx/client"
 	"gitlab.roboepics.com/roboepics/xerac/phoenix/pkg/proxy"
 	"gitlab.roboepics.com/roboepics/xerac/phoenix/pkg/util"
+
+	"github.com/RoboEpics/phx/client"
 )
 
 // jupyteAttachCmd represents the jupyteAttach command

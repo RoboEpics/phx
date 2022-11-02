@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"gitlab.roboepics.com/roboepics/xerac/phoenix/phx/client"
+	"github.com/RoboEpics/phx/client"
 	"gitlab.roboepics.com/roboepics/xerac/phoenix/pkg/token"
 
 	"github.com/spf13/cobra"
