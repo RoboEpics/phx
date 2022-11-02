@@ -81,7 +81,8 @@ var runCmd = &cobra.Command{
 
 		jobID := newID(name)
 		jobObj := client.Object{
-			ID: jobID,
+			ID:   jobID,
+			Name: name,
 			Value: map[string]any{
 				"cluster": cluster,
 				"flavor":  flavor,
