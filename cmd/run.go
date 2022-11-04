@@ -46,6 +46,9 @@ var runCmd = &cobra.Command{
 				"bucket": bucketID,
 			},
 		}
+		bucketObj.Annotations = map[string]string{
+			"owner": baseClient.Token.UUID(),
+		}
 		err := bucketClient.Create(bucketObj)
 		if err != nil {
 			log.Fatalln("Cannot create bucket:", err)
