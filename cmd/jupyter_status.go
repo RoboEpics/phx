@@ -13,8 +13,9 @@ import (
 
 // jupyteStatusCmd represents the jupyteStatus command
 var jupyteStatusCmd = &cobra.Command{
-	Use:   "status",
-	Short: "A brief description of your command",
+	Use:     "status",
+	Short:   "A brief description of your command",
+	Aliases: []string{"ls", "list"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if !loggedIn {
 			fmt.Println("❌ You should first log in to your Phoenix account!")

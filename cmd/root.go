@@ -31,7 +31,32 @@ var (
 var rootCmd = &cobra.Command{
 	Use: "phx",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		return viper.BindPFlags(cmd.Flags())
+		err := viper.BindPFlags(cmd.Flags())
+		if err != nil {
+			return err
+		}
+
+		remotePeer := viper.GetString("remote")
+
+		var (
+			tokenObj token.BaseToken
+			tkn      = viper.GetString("token")
+			uuid     = viper.GetString("uuid")
+		)
+		if tkn != "" && uuid != "" {
+			tokenObj = token.NewStaticToken(tkn, uuid, []string{})
+		} else {
+			tokenObj = token.NewDefaultJWTToken()
+		}
+		if tokenObj.IsLoggedIn() {
+			loggedIn = true
+		}
+		baseClient = client.Client{
+			Token:     tokenObj,
+			APIServer: remotePeer,
+			HTTP:      http.DefaultClient,
+		}
+		return nil
 	},
 }
 
@@ -61,18 +86,9 @@ func init() {
 
 	rootCmd.PersistentFlags().BoolP("quiet", "q", false, "Quiet output")
 	rootCmd.PersistentFlags().StringP("remote", "r", "", "Remote address")
+	rootCmd.PersistentFlags().String("token", "", "Phoenix Token; Mostly used for service accounts")
+	rootCmd.PersistentFlags().String("uuid", "", "Phoenix UUID; Mostly used for service accounts")
 
-	remotePeer := viper.GetString("remote")
-	tokenObj := token.NewDefaultJWTToken()
-	// tokenObj := token.NewStaticToken("$udo", "", nil)
-	if tokenObj.IsLoggedIn() {
-		loggedIn = true
-	}
-	baseClient = client.Client{
-		Token:     tokenObj,
-		APIServer: remotePeer,
-		HTTP:      http.DefaultClient,
-	}
 	rand.Seed(time.Now().Unix())
 }
 

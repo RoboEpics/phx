@@ -15,7 +15,7 @@ import (
 
 // runCmd represents the run command
 var runCmd = &cobra.Command{
-	Use:   "run --cluster $CLUSTER --flavor $FLAVOR [--name $NAME] $CMD [...$ARGS]",
+	Use:   "run $CMD [...$ARGS]",
 	Short: "Run your job remotely",
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
@@ -30,12 +30,15 @@ var runCmd = &cobra.Command{
 		}
 
 		var (
-			name    = viper.GetString("name")
-			cluster = viper.GetString("cluster")
-			flavor  = viper.GetString("flavor")
+			name     = viper.GetString("name")
+			cluster  = viper.GetString("cluster")
+			flavor   = viper.GetString("flavor")
+			sa       = viper.GetString("sa")
+			createSA = viper.GetBool("create-sa")
 
 			jobClient    = client.JobClient(baseClient)
 			bucketClient = client.BucketClient(baseClient)
+			saClient     = client.ServiceAccountClient(baseClient)
 		)
 
 		bucketID := newID(name)
@@ -82,16 +85,33 @@ var runCmd = &cobra.Command{
 			log.Fatalln("Cannot push bucket:", err)
 		}
 
+		if sa == "" && createSA {
+			sa = newID(name)
+			saObject := client.Object{
+				ID:   sa,
+				Name: name,
+				Annotations: map[string]string{
+					"owner": baseClient.Token.UUID(),
+				},
+				Value: map[string]any{},
+			}
+			err := saClient.Create(saObject)
+			if err != nil {
+				log.Fatalln(err)
+			}
+		}
+
 		jobID := newID(name)
 		jobObj := client.Object{
 			ID:   jobID,
 			Name: name,
 			Value: map[string]any{
-				"cluster": cluster,
-				"flavor":  flavor,
-				"cmd":     args[0],
-				"args":    args[1:],
-				"repo":    bucketID,
+				"cluster":         cluster,
+				"flavor":          flavor,
+				"cmd":             args[0],
+				"args":            args[1:],
+				"repo":            bucketID,
+				"service_account": sa,
 			},
 		}
 		if err := jobClient.Create(jobObj); err != nil {
@@ -99,6 +119,7 @@ var runCmd = &cobra.Command{
 		}
 
 		fmt.Println("bucket:", bucketID)
+		fmt.Println("serviceAccount:", sa)
 		fmt.Println("job:", jobID)
 		if !viper.GetBool("quiet") {
 			fmt.Println(`
@@ -114,6 +135,8 @@ func init() {
 	runCmd.Flags().StringP("flavor", "f", "", "Flavor name")
 	runCmd.MarkFlagRequired("flavor")
 	runCmd.Flags().StringP("name", "n", "", "name")
+	runCmd.Flags().String("sa", "", "ServiceAccount name")
+	runCmd.Flags().Bool("create-sa", false, "Create new ServiceAccount for this jupyter")
 
 	rootCmd.AddCommand(runCmd)
 }

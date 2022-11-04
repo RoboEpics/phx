@@ -52,11 +52,12 @@ type Client struct {
 }
 
 var (
-	ErrEmptyID   = errors.New("empty id not acceptable")
-	ErrNotFound  = errors.New("error not found")
-	ErrForbidden = errors.New("forbidden")
-	ErrConflict  = errors.New("conflict")
-	ErrUnknown   = errors.New("unknown error")
+	ErrEmptyID    = errors.New("empty id not acceptable")
+	ErrNotFound   = errors.New("error not found")
+	ErrForbidden  = errors.New("forbidden")
+	ErrBadRequest = errors.New("bad request")
+	ErrConflict   = errors.New("conflict")
+	ErrUnknown    = errors.New("unknown error")
 )
 
 func (c Client) For(resourceName string) Client {
@@ -95,7 +96,7 @@ func (c *Client) Get(id string) (*Object, error) {
 	case http.StatusForbidden:
 		return nil, ErrForbidden
 	case http.StatusBadRequest:
-		fallthrough
+		return nil, ErrBadRequest
 	default:
 		return nil, ErrUnknown
 	}

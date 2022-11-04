@@ -6,8 +6,9 @@ import (
 
 // jupyterCmd represents the jupyter command
 var jupyterCmd = &cobra.Command{
-	Use:   "jupyter",
-	Short: "Run remote jupyter kernels",
+	Use:     "jupyter",
+	Aliases: []string{"jup"},
+	Short:   "Run remote jupyter kernels",
 }
 
 func init() {

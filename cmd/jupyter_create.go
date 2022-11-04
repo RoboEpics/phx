@@ -17,8 +17,9 @@ import (
 
 // jupyterCreateCmd represents the jupyterCreate command
 var jupyterCreateCmd = &cobra.Command{
-	Use:   "create",
-	Short: "Create a jupyter kernel",
+	Use:     "create",
+	Short:   "Create a jupyter kernel",
+	Aliases: []string{"new"},
 	Run: func(cmd *cobra.Command, args []string) {
 		if !loggedIn {
 			fmt.Println("❌ You should first log in to your Phoenix account!")
@@ -31,12 +32,15 @@ var jupyterCreateCmd = &cobra.Command{
 		}
 
 		var (
-			name    = viper.GetString("name")
-			cluster = viper.GetString("cluster")
-			flavor  = viper.GetString("flavor")
+			name     = viper.GetString("name")
+			cluster  = viper.GetString("cluster")
+			flavor   = viper.GetString("flavor")
+			sa       = viper.GetString("sa")
+			createSA = viper.GetBool("create-sa")
 
 			jobClient    = client.JobClient(baseClient)
 			bucketClient = client.BucketClient(baseClient)
+			saClient     = client.ServiceAccountClient(baseClient)
 		)
 
 		bucketID := newID(name)
@@ -84,6 +88,22 @@ var jupyterCreateCmd = &cobra.Command{
 			log.Fatalln("Cannot push bucket:", err)
 		}
 
+		if sa == "" && createSA {
+			sa = newID(name)
+			saObject := client.Object{
+				ID:   sa,
+				Name: name,
+				Annotations: map[string]string{
+					"owner": baseClient.Token.UUID(),
+				},
+				Value: map[string]any{},
+			}
+			err := saClient.Create(saObject)
+			if err != nil {
+				log.Fatalln(err)
+			}
+		}
+
 		proxyKey := util.RandomStr(util.CharsetHex, 32)
 
 		jobID := newID(name)
@@ -105,8 +125,9 @@ var jupyterCreateCmd = &cobra.Command{
 					"--NotebookApp.port_retries=0",
 					"--allow-root",
 				},
-				"proxy_key": proxyKey,
-				"repo":      bucketID,
+				"service_account": sa,
+				"proxy_key":       proxyKey,
+				"repo":            bucketID,
 			},
 		}
 		if err := jobClient.Create(jobObj); err != nil {
@@ -114,6 +135,7 @@ var jupyterCreateCmd = &cobra.Command{
 		}
 
 		fmt.Println("bucket:", bucketID)
+		fmt.Println("serviceAccount:", sa)
 		fmt.Println("jupyter:", jobID)
 		if !viper.GetBool("quiet") {
 			fmt.Println(`
@@ -130,7 +152,9 @@ func init() {
 	jupyterCreateCmd.MarkFlagRequired("cluster")
 	jupyterCreateCmd.Flags().StringP("flavor", "f", "", "Flavor name")
 	jupyterCreateCmd.MarkFlagRequired("flavor")
-	jupyterCreateCmd.Flags().StringP("name", "n", "", "name")
+	jupyterCreateCmd.Flags().StringP("name", "n", "", "Name")
+	jupyterCreateCmd.Flags().String("sa", "", "ServiceAccount name")
+	jupyterCreateCmd.Flags().Bool("create-sa", false, "Create new ServiceAccount for this jupyter")
 
 	jupyterCmd.AddCommand(jupyterCreateCmd)
 }
