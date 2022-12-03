@@ -20,6 +20,17 @@ var jupyterCreateCmd = &cobra.Command{
 	Use:     "create",
 	Short:   "Create a jupyter kernel",
 	Aliases: []string{"new"},
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		for _, required := range []string{
+			"cluster", "flavor",
+		} {
+			val := viper.Get(required)
+			if val == nil {
+				return fmt.Errorf("required config %s not provided", required)
+			}
+		}
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		if !loggedIn {
 			fmt.Println("❌ You should first log in to your Phoenix account!")
@@ -45,7 +56,7 @@ var jupyterCreateCmd = &cobra.Command{
 
 		bucketID := newID(name)
 		bucketObj := client.Object{
-			ID:   newID(name),
+			ID:   bucketID,
 			Name: name,
 			Value: map[string]any{
 				"file":   bucketID,
@@ -149,9 +160,7 @@ In order to get jupyter statuses, run:
 
 func init() {
 	jupyterCreateCmd.Flags().StringP("cluster", "c", "", "Cluster name")
-	jupyterCreateCmd.MarkFlagRequired("cluster")
 	jupyterCreateCmd.Flags().StringP("flavor", "f", "", "Flavor name")
-	jupyterCreateCmd.MarkFlagRequired("flavor")
 	jupyterCreateCmd.Flags().StringP("name", "n", "", "Name")
 	jupyterCreateCmd.Flags().String("sa", "", "ServiceAccount name")
 	jupyterCreateCmd.Flags().Bool("create-sa", false, "Create new ServiceAccount for this jupyter")

@@ -18,6 +18,17 @@ var runCmd = &cobra.Command{
 	Use:   "run $CMD [...$ARGS]",
 	Short: "Run your job remotely",
 	Args:  cobra.MinimumNArgs(1),
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		for _, required := range []string{
+			"cluster", "flavor",
+		} {
+			val := viper.Get(required)
+			if val == nil {
+				return fmt.Errorf("required config %s not provided", required)
+			}
+		}
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		if !loggedIn {
 			fmt.Println("❌ You should first log in to your Phoenix account!")
@@ -131,9 +142,7 @@ In order to get job statuses, run:
 
 func init() {
 	runCmd.Flags().StringP("cluster", "c", "", "Cluster name")
-	runCmd.MarkFlagRequired("cluster")
 	runCmd.Flags().StringP("flavor", "f", "", "Flavor name")
-	runCmd.MarkFlagRequired("flavor")
 	runCmd.Flags().StringP("name", "n", "", "name")
 	runCmd.Flags().String("sa", "", "ServiceAccount name")
 	runCmd.Flags().Bool("create-sa", false, "Create new ServiceAccount for this jupyter")
