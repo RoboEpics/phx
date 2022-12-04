@@ -34,10 +34,19 @@ var loginCmd = &cobra.Command{
 			if err != nil {
 				log.Fatal(err)
 			}
-			err = viper.WriteConfigAs(homeDir + "/.phoenix/config.yaml")
-			if err != nil {
-				fmt.Printf("Writing config failed: %v\n", err)
+			configDir := homeDir + "/.phoenix"
+			if err := os.MkdirAll(configDir, 0700); err != nil {
+				fmt.Printf("❌ Failed to create config directory %s: %v", configDir, err)
+				return
 			}
+			err = viper.WriteConfigAs(configDir + "/config.yaml")
+			if err != nil {
+				fmt.Printf("❌ Writing config failed: %v\n", err)
+				return
+			}
+
+			loggedIn = true
+			fmt.Printf("✅ Successfully logged in as: %s\n", uuid)
 		} else {
 			username, err := promptUsername()
 			if err != nil {
