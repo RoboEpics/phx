@@ -23,8 +23,8 @@ var (
 	loggedIn   bool
 
 	defaults = map[string]any{
-		"remote":  "https://staging.api.phoenix.roboepics.com",
-		"gateway": "wss://staging.gateway.phoenix.roboepics.com",
+		"remote":  "https://api.phoenix.roboepics.com",
+		"gateway": "ws://gateway.phoenix.roboepics.com",
 	}
 )
 
