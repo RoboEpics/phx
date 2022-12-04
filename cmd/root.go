@@ -74,8 +74,12 @@ func isProjectInitialized() bool {
 }
 
 func init() {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal(err)
+	}
 	viper.SetConfigType("yaml")
-	viper.AddConfigPath("$HOME/.phoenix")
+	viper.AddConfigPath(homeDir + "/.phoenix")
 	viper.SetEnvPrefix("PHX")
 	viper.AutomaticEnv()
 	viper.ReadInConfig()

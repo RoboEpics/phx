@@ -11,7 +11,7 @@ Run your data science workloads on high-performance cloud infrastructure in the 
 You can download and install the CLI for any of the following platforms.
 
 | Supported Platform | Download (Latest)            |
-| -------------------| -----------------------------|
+|--------------------|------------------------------|
 | Windows            | [Link][latest-windows-amd64] |
 | Linux              | [Link][latest-linux-amd64]   |
 | macOS              | [Link][latest-macos-amd64]   |
@@ -36,6 +36,11 @@ Next you need to login to the Phoenix Platform by running this command and filli
 
 ```bash
 phx login
+```
+
+If you need to login with a static token, you can pass the `--static` flag to `phx login`:
+```bash
+phx login --static
 ```
 
 As easily as that, now your project is ready for the cloud.
