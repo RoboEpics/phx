@@ -16,9 +16,9 @@ You can download and install the CLI for any of the following platforms.
 | Linux              | [Link][latest-linux-amd64]   |
 | macOS              | [Link][latest-macos-amd64]   |
 
-[latest-windows-amd64]: https://github.com/RoboEpics/phoenix-binaries/releases/download/v0.3.0/phx-windows-amd64.exe
-[latest-linux-amd64]: https://github.com/RoboEpics/phoenix-binaries/releases/download/v0.3.0/phx-linux-amd64
-[latest-macos-amd64]: https://github.com/RoboEpics/phoenix-binaries/releases/download/v0.3.0/phx-darwin-amd64
+[latest-windows-amd64]: https://github.com/RoboEpics/phoenix-binaries/releases/download/v0.4.0/phx-windows-amd64.exe
+[latest-linux-amd64]: https://github.com/RoboEpics/phoenix-binaries/releases/download/v0.4.0/phx-linux-amd64
+[latest-macos-amd64]: https://github.com/RoboEpics/phoenix-binaries/releases/download/v0.4.0/phx-darwin-amd64
 
 To download a specific version, visit the [releases page](https://github.com/RoboEpics/phoenix-binaries/releases).
 
