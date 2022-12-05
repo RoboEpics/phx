@@ -5,6 +5,9 @@ tar:
   windows:
     cmd: "python"
     args: ["./.phoenix/TAR.py"]
+  darwin:
+    cmd: "/bin/zsh"
+    args: [ "./.phoenix/TAR" ]
 pack:
   linux: 
     cmd: "/bin/bash"
