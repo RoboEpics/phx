@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"gitlab.roboepics.com/roboepics/xerac/phoenix/pkg/util"
 	"log"
 	"os"
 	"path"
@@ -41,11 +42,12 @@ var runCmd = &cobra.Command{
 		}
 
 		var (
-			name     = viper.GetString("name")
-			cluster  = viper.GetString("cluster")
-			flavor   = viper.GetString("flavor")
-			sa       = viper.GetString("sa")
-			createSA = viper.GetBool("create-sa")
+			name        = viper.GetString("name")
+			cluster     = viper.GetString("cluster")
+			flavor      = viper.GetString("flavor")
+			sa          = viper.GetString("sa")
+			createSA    = viper.GetBool("create-sa")
+			enableProxy = viper.GetBool("enable-proxy")
 
 			jobClient    = client.JobClient(baseClient)
 			bucketClient = client.BucketClient(baseClient)
@@ -113,25 +115,34 @@ var runCmd = &cobra.Command{
 		}
 
 		jobID := newID(name)
+		var jobValue = map[string]any{
+			"cluster":         cluster,
+			"flavor":          flavor,
+			"cmd":             args[0],
+			"args":            args[1:],
+			"repo":            bucketID,
+			"service_account": sa,
+		}
+
+		if enableProxy {
+			proxyKey := util.RandomStr(util.CharsetHex, 32)
+			jobValue["proxy_key"] = proxyKey
+		}
+
 		jobObj := client.Object{
-			ID:   jobID,
-			Name: name,
-			Value: map[string]any{
-				"cluster":         cluster,
-				"flavor":          flavor,
-				"cmd":             args[0],
-				"args":            args[1:],
-				"repo":            bucketID,
-				"service_account": sa,
-			},
+			ID:    jobID,
+			Name:  name,
+			Value: jobValue,
 		}
 		if err := jobClient.Create(jobObj); err != nil {
 			log.Fatalln("Cannot create Job:", err)
 		}
 
-		fmt.Println("bucket:", bucketID)
-		fmt.Println("serviceAccount:", sa)
-		fmt.Println("job:", jobID)
+		fmt.Println("Bucket:", bucketID)
+		if createSA {
+			fmt.Println("Service Account:", sa)
+		}
+		fmt.Println("Job:", jobID)
 		if !viper.GetBool("quiet") {
 			fmt.Println(`
 In order to get job statuses, run:
@@ -145,7 +156,8 @@ func init() {
 	runCmd.Flags().StringP("flavor", "f", "", "Flavor name")
 	runCmd.Flags().StringP("name", "n", "", "name")
 	runCmd.Flags().String("sa", "", "ServiceAccount name")
-	runCmd.Flags().Bool("create-sa", false, "Create new ServiceAccount for this jupyter")
+	runCmd.Flags().Bool("create-sa", false, "Create new ServiceAccount for this job")
+	runCmd.Flags().Bool("enable-proxy", false, "Enable proxy for this job")
 
 	rootCmd.AddCommand(runCmd)
 }
