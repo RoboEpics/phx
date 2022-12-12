@@ -145,15 +145,17 @@ var jupyterCreateCmd = &cobra.Command{
 			log.Fatalln("Cannot create Job:", err)
 		}
 
-		fmt.Println("bucket:", bucketID)
-		fmt.Println("serviceAccount:", sa)
-		fmt.Println("jupyter:", jobID)
+		fmt.Println("Bucket:", bucketID)
+		if createSA {
+			fmt.Println("Service Account:", sa)
+		}
+		fmt.Println("Jupyter:", jobID)
 		if !viper.GetBool("quiet") {
-			fmt.Println(`
+			fmt.Printf(`
 Try to attach to your jupyter, run:
- $ phx jupyter attach
+ $ phx jupyter attach %v
 In order to get jupyter statuses, run:
- $ phx jupyter status`)
+ $ phx jupyter status`, jobID)
 		}
 	},
 }
