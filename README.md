@@ -3,10 +3,17 @@ Run your data science workloads on high-performance cloud infrastructure in the 
 
 # Table of contents
 - [Installation](#installation)
+  - [Download](#download)
+  - [Setup](#setup)
+    - [Linux](#linux)
+    - [Windows](#windows)
+    - [macOS](#macos)
 - [Usage](#usage)
 - [Contact](#contact)
 
 # Installation
+
+## Download
 
 You can download and install the CLI for any of the following platforms.
 
@@ -22,9 +29,47 @@ You can download and install the CLI for any of the following platforms.
 
 To download a specific version, visit the [releases page](https://github.com/RoboEpics/phoenix-binaries/releases).
 
+## Setup
+
+### Linux
+
+Run the following commands in the directory to make the CLI accessible from your terminal:
+
+```bash
+mkdir ~/bin
+mv phx-linux ~/bin/phx
+echo "export PATH=$PATH:~/bin" >> ~/.bashrc
+```
+
+### Windows
+
+To make the CLI accessible from your terminal, first create a folder called `bin` in your home directory,
+then open the environment variables settings by searching `environment variables` in the Start Menu and
+clicking on `Edit the system environment variables` and then clicking on `Environment Variables`.
+
+In the opened window, find `Path` in the `User variables` list and double click on it. Then click on `New` to create a new entry in the list.
+
+Paste the following line in the newly created entry:
+
+```
+%USERPROFILE%\bin
+```
+
+Lastly, click `OK` for all the opened windows.
+
+### macOS
+
+Run the following commands to make the CLI accessible from your terminal:
+
+```zsh
+mkdir ~/bin
+mv phx-darwin ~/bin/phx
+echo "export PATH=$PATH:~/bin" >> ~/.zshrc
+```
+
 # Usage
 
-First you need to initialize Phoenix in your data science project directory:
+First you need to initialize Phoenix in your project directory:
 
 ```bash
 phx init
