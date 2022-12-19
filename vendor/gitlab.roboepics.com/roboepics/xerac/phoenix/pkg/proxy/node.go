@@ -195,7 +195,7 @@ func (n *Node) ListenProxyWithKey(hops []string, key []byte, local, remote IPPor
 			ln:      &lnS,
 			created: true,
 		}
-		n.receiveConnectFrame(f)
+		n.receive(f)
 	}
 }
 
