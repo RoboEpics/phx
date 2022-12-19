@@ -4,8 +4,17 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/websocket"
+)
+
+const (
+	// Time allowed to read the next pong message from the client.
+	pongWait = 60 * time.Second
+
+	// Send pings to client with this period. Must be less than pongWait.
+	pingPeriod = (pongWait * 9) / 10
 )
 
 type Link interface {
@@ -189,6 +198,14 @@ func (wl *websocketLink) read() {
 	defer wl.Close()
 	defer close(wl.rch)
 	for {
+		wl.ws.SetReadDeadline(
+			time.Now().Add(pongWait))
+		wl.ws.SetPongHandler(
+			func(string) error {
+				wl.ws.SetReadDeadline(
+					time.Now().Add(pongWait))
+				return nil
+			})
 		_, msg, err := wl.ws.ReadMessage()
 		if err != nil {
 			return
@@ -205,7 +222,11 @@ func (wl *websocketLink) read() {
 }
 
 func (wl *websocketLink) write() {
-	defer wl.Close()
+	pingTicker := time.NewTicker(pingPeriod)
+	defer func() {
+		pingTicker.Stop()
+		wl.Close()
+	}()
 	for {
 		select {
 		case msg, ok := <-wl.wch:
@@ -214,6 +235,10 @@ func (wl *websocketLink) write() {
 			}
 			err := wl.ws.WriteMessage(websocket.BinaryMessage, msg)
 			if err != nil {
+				return
+			}
+		case <-pingTicker.C:
+			if err := wl.ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
 				return
 			}
 		case <-wl.closed:

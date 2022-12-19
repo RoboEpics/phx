@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"math/rand"
 	"net"
 	"net/http"
 	"sync"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"gitlab.roboepics.com/roboepics/xerac/phoenix/pkg/util"
 )
 
@@ -53,8 +54,9 @@ func (n *Node) ListenAndServe() error {
 }
 
 func (n *Node) Serve(l net.Listener) error {
+	log := logrus.WithFields(logrus.Fields{})
 	n.init()
-	log.Println("Start serving", l.Addr())
+	log.Infoln("Start serving", l.Addr())
 	handler, acceptor := WebsocketAcceptor(func(name, secret string) bool {
 		n.mu.Lock()
 		defer n.mu.Unlock()
@@ -65,20 +67,25 @@ func (n *Node) Serve(l net.Listener) error {
 	})
 	go func() {
 		defer func() {
-			log.Println("closing", l.Addr(), "listener")
+			log.Warnln("Closing", l.Addr(), "listener")
 			l.Close()
 		}()
 		for {
 			ln, name, secret, err := acceptor()
 			if err != nil {
-				log.Println(l, "Accept error", err)
+				log.Warnln("Accept error", err)
 				return
 			}
-			log.Println("Accepted:", ln.RemoteAddr())
+			log := log.WithFields(logrus.Fields{
+				"remote_address": ln.RemoteAddr(),
+				"name":           name,
+			})
+			log.Debugln("Accepted")
 
 			n.mu.Lock()
 			p, exists := n.peers[name]
 			if !exists {
+				log.Debugln("Peer not exists; creating one.")
 				p = &peer{
 					name:        name,
 					secret:      secret,
@@ -97,11 +104,13 @@ func (n *Node) Serve(l net.Listener) error {
 				peer: p,
 			}
 			if p.secret != secret {
+				log.Debugln("Invalid secret, dropping link.")
 				ln.Close()
 				p.mu.Unlock()
 			} else {
 				p.links[lnS] = struct{}{}
 				p.mu.Unlock()
+				log.Debugln("Reading and Broadcasting new link")
 				go lnS.read(n.receive)
 				p.pubsub.Broadcast(lnS)
 			}
@@ -248,18 +257,28 @@ func (n *Node) receiveRawFrame(f frame) {
 }
 
 func (n *Node) receiveConnectFrame(f frame) {
+	log := logrus.WithFields(logrus.Fields{
+		"frame": "connect",
+	})
+
 	if n.DisableIncomingConns && !f.created {
 		return
 	}
 
 	var connect payloadConnect
 	if err := f.unmarshal(&connect); err != nil {
-		log.Println("invalid connect frame, dropping:", err)
+		log.Warnln("invalid connect frame, dropping:", err)
 		return
 	}
+	log = log.WithFields(logrus.Fields{
+		"hops":          connect.Hops,
+		"nonce":         connect.Nonce,
+		"signature_len": len(connect.Signature),
+	})
 
 	if len(connect.Hops) <= 0 {
 		if len(n.Key) > 0 && !connect.valid(n.Key) {
+			log.Warnln("invalid signature. send back error.")
 			msg := encodeMsg(magicError,
 				payloadError{Reason: "invalid signature"})
 			n.write(f.ln, msg)
@@ -268,6 +287,7 @@ func (n *Node) receiveConnectFrame(f frame) {
 
 		n.mu.Lock()
 		if _, exists := n.usedNonces[connect.Nonce]; exists {
+			log.Warnln("duplicated nonce. send back error.")
 			n.mu.Unlock()
 			msg := encodeMsg(magicError,
 				payloadError{Reason: "invalid signature"})
@@ -285,12 +305,14 @@ func (n *Node) receiveConnectFrame(f frame) {
 		}
 		ln, err := d()
 		if err != nil {
+			log.Warnln("cannot dial terminal TCP:", err)
 			msg := encodeMsg(magicError,
 				payloadError{Reason: "cannot connect: " + err.Error()})
 			n.write(f.ln, msg)
 			return
 		}
 
+		log.Debugln("Registering terminal link")
 		lnS := &linkState{
 			link:       &ln,
 			busy:       true,
@@ -323,6 +345,7 @@ func (n *Node) receiveConnectFrame(f frame) {
 	if !found {
 		if !f.ln.terminal {
 			// send error: next hop not found
+			log.Warnln("next hop not found")
 			msg := encodeMsg(magicError,
 				payloadError{Reason: "next hop not found: " + next})
 			n.write(f.ln, msg)
@@ -332,10 +355,13 @@ func (n *Node) receiveConnectFrame(f frame) {
 		return
 	}
 
-	freeLn := nextPeer.freeLink(5 * time.Second)
+	log.Debugln("Demanding free link to next hop")
+	timeout := 5 * time.Second
+	freeLn := nextPeer.freeLink(timeout)
 	if freeLn == nil {
 		if !f.ln.terminal {
-			log.Println("not enough link to", next)
+			log.WithField("timeout", timeout).
+				Warnln("not enough link to next hop")
 			msg := encodeMsg(magicError,
 				payloadError{Reason: "not enough link to: " + next})
 			n.write(f.ln, msg)
@@ -358,11 +384,17 @@ func (n *Node) receiveConnectFrame(f frame) {
 	f.ln.Unlock()
 
 	connect.Hops = rest
+	log.Debugln("Forwarding to next hop")
 	msg := encodeMsg(magicConnect, connect)
 	n.write(freeLn, msg)
 }
 
 func (n *Node) receiveAckFrame(f frame) {
+	log := logrus.WithFields(logrus.Fields{
+		"frame": "ack",
+	})
+	log.Debugln("Recieved Ack frame")
+
 	var (
 		st  = f.ln
 		st2 *linkState
@@ -386,6 +418,7 @@ func (n *Node) receiveAckFrame(f frame) {
 			// start reading
 			go st2.read(n.receive)
 		} else {
+			log.Debugln("Forwarding Ack frame")
 			msg := encodeMsg(magicAck, nil)
 			n.write(st2, msg)
 		}
@@ -401,6 +434,19 @@ func (n *Node) receiveCloseErrorFrame(f frame) {
 		return
 	}
 
+	log := logrus.WithFields(logrus.Fields{
+		"remote": st.RemoteAddr(),
+	})
+	switch f.magic() {
+	case magicClose:
+		log = log.WithField("frame", "close")
+		log.Infoln("Recieved close frame")
+	case magicError:
+		log = log.WithField("frame", "error")
+		log.Warnln("Recieved error frame")
+	}
+
+	log.Debugln("Reset ingress link")
 	// reset ingress link
 	st.Lock()
 	st2 = st.attachedTo
@@ -409,10 +455,13 @@ func (n *Node) receiveCloseErrorFrame(f frame) {
 	st.peer.releaseLink(st)
 
 	if st2 != nil {
+		log = log.WithField("remote2", st2.RemoteAddr())
 		if st2.terminal {
+			log.Debugln("Flush and Close")
 			// n.closeTermLink(st2)
 			n.flushAndClose(st2)
 		} else {
+			log.Debugln("Forward close/error frame")
 			// forward message:
 			n.write(st2, f.body)
 
@@ -420,6 +469,7 @@ func (n *Node) receiveCloseErrorFrame(f frame) {
 			st2.attachedTo = nil
 			st2.Unlock()
 
+			log.Debugln("Flush and Close")
 			// flush and close
 			n.flushAndClose(st2)
 		}
@@ -437,10 +487,17 @@ func (n *Node) receiveDataFrame(f frame) {
 		return
 	}
 
+	log := logrus.WithFields(logrus.Fields{
+		"log_uid": rand.Int(),
+		"frame":   "data",
+		"remote":  st.RemoteAddr(),
+	})
+
 	if st.attachedTo.terminal {
 		// extract payload from data frame.
 		var data payloadData
 		if err := f.unmarshal(&data); err != nil {
+			log.Errorln("Error unmarshal data", err)
 			// Drop corrupted frames.
 			// TODO: we should not do this!
 			//  we must close connection.
@@ -579,24 +636,25 @@ func (p *peer) checkupLinkCount() (n int, recents chan *linkState) {
 	if p.dialer == nil {
 		return 0, nil
 	}
+	log := logrus.WithFields(logrus.Fields{
+		"min_conns": p.minConns,
+	})
 
 	p.mu.Lock()
 	c := 0
 	for ln := range p.links {
-		ok := false
 		ln.Lock()
 		if !ln.busy {
-			ok = true
 			c++
 		}
 		ln.Unlock()
-		if ok {
-			c++
-		}
 	}
 	p.mu.Unlock()
+	log = log.WithField("conns", c)
+	log.Debugln(c, "free connections found")
 
 	if diff := p.minConns - c; diff > 0 {
+		log.Debugln("running", diff, "dialers")
 		recents = make(chan *linkState, diff)
 		for i := 0; i < diff; i++ {
 			go func() {
@@ -609,8 +667,11 @@ func (p *peer) checkupLinkCount() (n int, recents chan *linkState) {
 }
 
 func (p *peer) freeLink(timeout time.Duration) *linkState {
+	log := logrus.WithFields(logrus.Fields{})
+
 	id, recents := p.pubsub.RegisterN(32)
 	defer p.pubsub.Close(id)
+
 	// check all links:
 	for ln := range p.links {
 		if ln == nil {
@@ -628,6 +689,7 @@ func (p *peer) freeLink(timeout time.Duration) *linkState {
 		}
 	}
 	// not found, wait for new link:
+	log.Debugln("No free link found. waiting for new one.")
 	for {
 		select {
 		case ln, ok := <-recents:
@@ -649,12 +711,15 @@ func (p *peer) freeLink(timeout time.Duration) *linkState {
 				return ln
 			}
 		case <-time.After(timeout):
+			log.Warnln("No free link found after", timeout)
 			return nil
 		}
 	}
 }
 
 func (p *peer) releaseLink(ls *linkState) bool {
+	log := logrus.WithFields(logrus.Fields{})
+
 	ls.Lock()
 	ls.attachedTo = nil
 	ls.Unlock()
@@ -662,6 +727,7 @@ func (p *peer) releaseLink(ls *linkState) bool {
 	// non-terminal links
 	if p != nil {
 		p.mu.Lock()
+		log.Debugln("releasing link", ls)
 		delete(p.links, ls)
 		p.mu.Unlock()
 	}
@@ -673,12 +739,14 @@ func (p *peer) releaseLink(ls *linkState) bool {
 }
 
 func (p *peer) dial() *linkState {
+	log := logrus.WithFields(logrus.Fields{})
 	if p.dialer == nil {
 		return nil
 	}
 
 	ln, err := p.dialer()
 	if err != nil {
+		log.Errorln("dial error:", err)
 		if ln != nil {
 			ln.Close()
 		}
@@ -691,6 +759,7 @@ func (p *peer) dial() *linkState {
 	}
 
 	p.mu.Lock()
+	log.Infoln("registering new link:", lnS.RemoteAddr())
 	p.links[lnS] = struct{}{}
 	p.mu.Unlock()
 	p.pubsub.Broadcast(lnS)

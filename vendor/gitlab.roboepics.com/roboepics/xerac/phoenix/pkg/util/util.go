@@ -24,6 +24,14 @@ func Any(args ...bool) bool {
 }
 
 func EqualMap[K, V comparable](a, b map[K]V) bool {
+	return EqualMapFunc(
+		a, b,
+		func(v1, v2 V) bool {
+			return v1 == v2
+		})
+}
+
+func EqualMapFunc[K comparable, V any](a, b map[K]V, eq func(v1, v2 V) bool) bool {
 	if len(a) != len(b) {
 		return false
 	}
@@ -32,7 +40,7 @@ func EqualMap[K, V comparable](a, b map[K]V) bool {
 		if !ok {
 			return false
 		}
-		if v != v2 {
+		if !eq(v, v2) {
 			return false
 		}
 	}
@@ -40,11 +48,19 @@ func EqualMap[K, V comparable](a, b map[K]V) bool {
 }
 
 func EqualSlice[T comparable](a, b []T) bool {
+	return EqualSliceFunc(
+		a, b,
+		func(v1, v2 T) bool {
+			return v1 == v2
+		})
+}
+
+func EqualSliceFunc[T any](a, b []T, eq func(v1, v2 T) bool) bool {
 	if len(a) != len(b) {
 		return false
 	}
 	for i := range a {
-		if a[i] != b[i] {
+		if !eq(a[i], b[i]) {
 			return false
 		}
 	}
