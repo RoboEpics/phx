@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -60,6 +61,15 @@ var (
 	ErrUnknown    = errors.New("unknown error")
 )
 
+type errorUnknown struct {
+	StatusCode int
+	Reason     string
+}
+
+func (err errorUnknown) Error() string {
+	return fmt.Sprintf("status code %d: %s", err.StatusCode, err.Reason)
+}
+
 func (c Client) For(resourceName string) Client {
 	c.ResourceName = resourceName
 	return c
@@ -98,7 +108,11 @@ func (c *Client) Get(id string) (*Object, error) {
 	case http.StatusBadRequest:
 		return nil, ErrBadRequest
 	default:
-		return nil, ErrUnknown
+		body, _ := ioutil.ReadAll(resp.Body)
+		return nil, errorUnknown{
+			StatusCode: resp.StatusCode,
+			Reason:     string(body),
+		}
 	}
 
 	var result Object
@@ -138,7 +152,11 @@ func (c *Client) Create(obj Object) error {
 	case http.StatusBadRequest:
 		fallthrough
 	default:
-		return ErrUnknown
+		body, _ := ioutil.ReadAll(resp.Body)
+		return errorUnknown{
+			StatusCode: resp.StatusCode,
+			Reason:     string(body),
+		}
 	}
 }
 
@@ -167,7 +185,11 @@ func (c *Client) List(
 	case http.StatusForbidden:
 		return nil, ErrForbidden
 	default:
-		return nil, ErrUnknown
+		body, _ := ioutil.ReadAll(resp.Body)
+		return nil, errorUnknown{
+			StatusCode: resp.StatusCode,
+			Reason:     string(body),
+		}
 	}
 
 	var result []Object
@@ -208,7 +230,11 @@ func (c *Client) Update(obj *Object) error {
 	case http.StatusBadRequest:
 		fallthrough
 	default:
-		return ErrUnknown
+		body, _ := ioutil.ReadAll(resp.Body)
+		return errorUnknown{
+			StatusCode: resp.StatusCode,
+			Reason:     string(body),
+		}
 	}
 
 	return json.NewDecoder(resp.Body).Decode(obj)
@@ -244,6 +270,10 @@ func (c *Client) Delete(obj Object) error {
 	case http.StatusBadRequest:
 		fallthrough
 	default:
-		return ErrUnknown
+		body, _ := ioutil.ReadAll(resp.Body)
+		return errorUnknown{
+			StatusCode: resp.StatusCode,
+			Reason:     string(body),
+		}
 	}
 }

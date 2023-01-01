@@ -7,11 +7,12 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/sirupsen/logrus"
 )
 
 const (
 	// Time allowed to read the next pong message from the client.
-	pongWait = 60 * time.Second
+	pongWait = 120 * time.Second
 
 	// Send pings to client with this period. Must be less than pongWait.
 	pingPeriod = (pongWait * 9) / 10
@@ -68,7 +69,7 @@ func (tl *tcpLink) read() {
 	defer tl.Close()
 	defer close(tl.rch)
 	const kb = 1024
-	buf := make([]byte, 32*kb)
+	buf := make([]byte, 4*kb)
 	for {
 		n, err := tl.conn.Read(buf)
 		if n > 0 {
@@ -93,6 +94,7 @@ func (tl *tcpLink) write() {
 				return
 			}
 			_, err := tl.conn.Write(msg)
+			time.Sleep(1 * time.Second)
 			if err != nil {
 				return
 			}
@@ -229,20 +231,42 @@ func (wl *websocketLink) write() {
 	}()
 	for {
 		select {
-		case msg, ok := <-wl.wch:
-			if !ok {
-				return
-			}
-			err := wl.ws.WriteMessage(websocket.BinaryMessage, msg)
-			if err != nil {
-				return
-			}
 		case <-pingTicker.C:
 			if err := wl.ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
+				logrus.Errorln("ERR!", err)
 				return
 			}
 		case <-wl.closed:
+			logrus.Infoln("CLOSED WEBSOCKET WIRE")
 			return
+		default:
+			select {
+			case msg, ok := <-wl.wch:
+				if !ok {
+					return
+				}
+				log := logrus.WithFields(logrus.Fields{
+					"MSG_SIZE": len(msg),
+					"OK":       ok,
+					"CH_SIZE":  len(wl.wch),
+				})
+				log.Traceln("WRITING TO WIRE:\n", string(msg))
+				time.Sleep(1 * time.Second)
+				err := wl.ws.WriteMessage(websocket.BinaryMessage, msg)
+				log.Traceln("DONE    TO WIRE ===================================<<<")
+				if err != nil {
+					log.Errorln("ERR!", err)
+					return
+				}
+			case <-pingTicker.C:
+				if err := wl.ws.WriteMessage(websocket.PingMessage, []byte{}); err != nil {
+					logrus.Errorln("ERR!", err)
+					return
+				}
+			case <-wl.closed:
+				logrus.Infoln("CLOSED WEBSOCKET WIRE")
+				return
+			}
 		}
 	}
 }

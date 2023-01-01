@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/RoboEpics/phx/client"
+	"gitlab.roboepics.com/roboepics/xerac/phoenix/pkg/common"
 	"gitlab.roboepics.com/roboepics/xerac/phoenix/pkg/token"
 
 	"github.com/spf13/cobra"
@@ -31,10 +32,12 @@ var (
 var rootCmd = &cobra.Command{
 	Use: "phx",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+
 		err := viper.BindPFlags(cmd.Flags())
 		if err != nil {
 			return err
 		}
+		common.SetupLogrusWithViper()
 
 		remotePeer := viper.GetString("remote")
 
@@ -74,19 +77,7 @@ func isProjectInitialized() bool {
 }
 
 func init() {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		log.Fatal(err)
-	}
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(homeDir + "/.phoenix")
-	viper.SetEnvPrefix("PHX")
-	viper.AutomaticEnv()
-	viper.ReadInConfig()
-
-	for k, v := range defaults {
-		viper.SetDefault(k, v)
-	}
+	common.SetupViper(defaults)
 
 	rootCmd.PersistentFlags().BoolP("quiet", "q", false, "Quiet output")
 	rootCmd.PersistentFlags().StringP("remote", "r", "", "Remote address")

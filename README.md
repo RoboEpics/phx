@@ -38,7 +38,7 @@ Run the following commands in the directory to make the CLI accessible from your
 ```bash
 mkdir ~/bin
 mv phx-linux ~/bin/phx
-echo "export PATH=$PATH:~/bin" >> ~/.bashrc
+echo "export PATH=\"\$PATH:\$HOME/bin\"" >> ~/.bashrc
 ```
 
 ### Windows
@@ -64,7 +64,7 @@ Run the following commands to make the CLI accessible from your terminal:
 ```zsh
 mkdir ~/bin
 mv phx-darwin ~/bin/phx
-echo "export PATH=$PATH:~/bin" >> ~/.zshrc
+echo "export PATH=\"\$PATH:\$HOME/bin\"" >> ~/.zshrc
 ```
 
 # Usage

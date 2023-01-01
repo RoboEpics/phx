@@ -81,6 +81,7 @@ github.com/spf13/viper/internal/encoding/yaml
 github.com/subosito/gotenv
 # gitlab.roboepics.com/roboepics/xerac/phoenix v0.0.0-00010101000000-000000000000 => ../phoenix/
 ## explicit; go 1.18
+gitlab.roboepics.com/roboepics/xerac/phoenix/pkg/common
 gitlab.roboepics.com/roboepics/xerac/phoenix/pkg/pei
 gitlab.roboepics.com/roboepics/xerac/phoenix/pkg/proxy
 gitlab.roboepics.com/roboepics/xerac/phoenix/pkg/token

@@ -47,7 +47,7 @@ var jupyterAttachCmd = &cobra.Command{
 		log.Printf("Copy http://localhost:%d/ into your Google Colab Local Kernel dialog.\n", local)
 		node := proxy.Node{
 			DialersCount:         2,
-			MinConns:             2,
+			MinConns:             4,
 			Key:                  []byte(proxyKey),
 			DisableIncomingConns: true,
 		}

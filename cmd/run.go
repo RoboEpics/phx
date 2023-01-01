@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"gitlab.roboepics.com/roboepics/xerac/phoenix/pkg/util"
 	"log"
 	"os"
 	"path"
+
+	"gitlab.roboepics.com/roboepics/xerac/phoenix/pkg/util"
 
 	"github.com/RoboEpics/phx/client"
 	"gitlab.roboepics.com/roboepics/xerac/phoenix/pkg/pei"

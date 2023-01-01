@@ -57,7 +57,7 @@ func runTunnelCmd(cmd *cobra.Command, args []string) {
 	log.Printf("Listening on 127.0.0.1:%d...\n", local)
 	node := proxy.Node{
 		DialersCount:         2,
-		MinConns:             2,
+		MinConns:             4,
 		Key:                  []byte(proxyKey),
 		DisableIncomingConns: true,
 	}
